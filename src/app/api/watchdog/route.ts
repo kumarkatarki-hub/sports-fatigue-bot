@@ -53,6 +53,33 @@ function buildTeaserMessage(redCount: number, amberCount: number, leagueLabel: s
   );
 }
 
+// ─── Clinical Risk Summary (mirrors telegram/route.ts) ───────────────────────
+
+function clinicalRiskSummary(acwr: number): string {
+  if (acwr > 1.50) {
+    return (
+      `   🚨 <b>DANGER ZONE (RED)</b>\n` +
+      `   Critical Load Spike. The body is struggling to recover. Statistically 3x higher risk of soft-tissue strain. Avoid 'Over' props; performance decay is imminent.`
+    );
+  }
+  if (acwr > 1.30) {
+    return (
+      `   ⚠️ <b>CAUTION ZONE</b>\n` +
+      `   Over-reaching detected. Fitness is high, but the 'fatigue ceiling' is near. High probability of a 60–70' substitution to protect the player.`
+    );
+  }
+  if (acwr >= 0.80) {
+    return (
+      `   ✅ <b>OPTIMAL ZONE</b>\n` +
+      `   Player is perfectly conditioned. High performance floor, low injury risk. Safe for full 90 mins.`
+    );
+  }
+  return (
+    `   ❄️ <b>UNDER-LOADED</b>\n` +
+    `   Lacks match sharpness. Likely returning from injury or a long break. May look 'rusty' in high-intensity moments.`
+  );
+}
+
 /**
  * Full deep-dive sent only to PAID subscribers.
  */
@@ -64,6 +91,7 @@ function buildPaidAlert(reports: FatigueReport[], leagueLabel: string): string {
     return [
       `${icon} <b>${r.playerName}</b>`,
       `   ACWR: <code>${r.acwr}</code> | Sprint drop: <code>${(r.sprintEfficiencyDrop * 100).toFixed(1)}%</code>`,
+      clinicalRiskSummary(r.acwr),
       `   UCL penalty: ${r.uclPenaltyApplied ? "⚠️ Yes (−12%)" : "No"}`,
       `   Injury risk (7d): <b>${injuryRisk}%</b> | Recovery: <b>${recovery}</b>`,
       `   <i>${r.riskZone === "RED" ? "Rec: 48–72 hr rest, RPE ≤4" : "Rec: Reduce load 20%, daily HRV"}</i>`,

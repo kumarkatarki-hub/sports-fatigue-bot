@@ -115,6 +115,33 @@ const DEMO_SQUAD: PlayerProfile[] = [
   },
 ];
 
+// ─── Clinical Risk Summary ────────────────────────────────────────────────────
+
+function clinicalRiskSummary(acwr: number): string {
+  if (acwr > 1.50) {
+    return (
+      `🚨 <b>DANGER ZONE (RED)</b>\n` +
+      `Critical Load Spike. The body is struggling to recover. Statistically 3x higher risk of soft-tissue strain. Avoid 'Over' props; performance decay is imminent.`
+    );
+  }
+  if (acwr > 1.30) {
+    return (
+      `⚠️ <b>CAUTION ZONE</b>\n` +
+      `Over-reaching detected. Fitness is high, but the 'fatigue ceiling' is near. High probability of a 60–70' substitution to protect the player.`
+    );
+  }
+  if (acwr >= 0.80) {
+    return (
+      `✅ <b>OPTIMAL ZONE</b>\n` +
+      `Player is perfectly conditioned. High performance floor, low injury risk. Safe for full 90 mins.`
+    );
+  }
+  return (
+    `❄️ <b>UNDER-LOADED</b>\n` +
+    `Lacks match sharpness. Likely returning from injury or a long break. May look 'rusty' in high-intensity moments.`
+  );
+}
+
 // ─── Formatters ───────────────────────────────────────────────────────────────
 
 function formatReport(r: FatigueReport, masked = false): string {
@@ -123,6 +150,7 @@ function formatReport(r: FatigueReport, masked = false): string {
   return [
     `${icon} ${nameStr}`,
     `├ ACWR: <code>${r.acwr}</code>`,
+    clinicalRiskSummary(r.acwr),
     `├ Sprint Eff: <code>${r.sprintEfficiency} km/90</code>`,
     `├ Sprint Drop: <code>${(r.sprintEfficiencyDrop * 100).toFixed(1)}%</code>`,
     `├ UCL Penalty: ${r.uclPenaltyApplied ? "⚠️ Yes (−12%)" : "✅ No"}`,
