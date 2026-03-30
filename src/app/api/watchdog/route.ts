@@ -168,10 +168,28 @@ export async function GET(req: NextRequest) {
   try {
     // ── 1. Fetch live player data from Sportmonks ──────────────────────────
     log.push("Fetching live data from Sportmonks…");
-    const daysParam = req.nextUrl.searchParams.get("days");
-    const daysBack  = Math.min(Math.max(parseInt(daysParam ?? "5", 10) || 5, 1), 30);
-    log.push(`Lookback window: ${daysBack} days`);
-    const liveData = await fetchLiveSquadProfiles([LEAGUE_UCL], daysBack);
+
+    // Date-range mode: ?from=2026-02-20&to=2026-03-15
+    const fromParam = req.nextUrl.searchParams.get("from");
+    const toParam   = req.nextUrl.searchParams.get("to");
+    const isBackfill = !!(fromParam && toParam);
+
+    let liveData;
+    if (isBackfill) {
+      log.push(`Backfill mode: ${fromParam} → ${toParam} (EPL + UCL, no broadcast)`);
+      liveData = await fetchLiveSquadProfiles(
+        [LEAGUE_EPL, LEAGUE_UCL],
+        5,          // daysBack ignored when fromDate/toDate supplied
+        fromParam,
+        toParam,
+      );
+    } else {
+      const daysParam = req.nextUrl.searchParams.get("days");
+      const daysBack  = Math.min(Math.max(parseInt(daysParam ?? "5", 10) || 5, 1), 30);
+      log.push(`Lookback window: ${daysBack} days`);
+      liveData = await fetchLiveSquadProfiles([LEAGUE_UCL], daysBack);
+    }
+
     log.push(`Fetched ${liveData.length} players across EPL + UCL`);
 
     if (liveData.length === 0) {
@@ -199,10 +217,12 @@ export async function GET(req: NextRequest) {
     log.push("Persisting reports to Supabase…");
     await persistReports(reports);
 
-    // ── 4. Broadcast if any RED or AMBER alerts exist ──────────────────────
+    // ── 4. Broadcast if any RED or AMBER alerts exist (skip during backfill) ──
     const alertWorthy = [...red, ...amber];
 
-    if (alertWorthy.length > 0) {
+    if (isBackfill) {
+      log.push("Backfill run — broadcast skipped to avoid spamming subscribers");
+    } else if (alertWorthy.length > 0) {
       // Separate by league for labelled messages
       const uclReports = alertWorthy.filter((r) => {
         const live = liveData.find((l) => l.profile.id === r.playerId);

@@ -101,12 +101,17 @@ async function smFetch<T>(path: string, params: Record<string, string> = {}): Pr
 
 // ─── Fetch recent fixtures (last N days) ─────────────────────────────────────
 
-export async function fetchRecentFixtures(leagueId: number, daysBack = 5): Promise<SmFixture[]> {
-  const to   = new Date();
-  const from = new Date(to.getTime() - daysBack * 86_400_000);
-  const fmt  = (d: Date) => d.toISOString().split("T")[0];
+export async function fetchRecentFixtures(
+  leagueId: number,
+  daysBack  = 5,
+  fromDate?: string,   // explicit ISO date, e.g. "2026-02-20"
+  toDate?  : string,   // explicit ISO date, e.g. "2026-03-15"
+): Promise<SmFixture[]> {
+  const fmt = (d: Date) => d.toISOString().split("T")[0];
+  const to  = toDate   ?? fmt(new Date());
+  const from = fromDate ?? fmt(new Date(new Date().getTime() - daysBack * 86_400_000));
 
-  return smFetch<SmFixture>(`/fixtures/between/${fmt(from)}/${fmt(to)}`, {
+  return smFetch<SmFixture>(`/fixtures/between/${from}/${to}`, {
     filters : `fixtureLeagues:${leagueId}`,
     include : "participants;lineups.details",
     per_page: "50",
@@ -207,10 +212,12 @@ export interface LivePlayerData {
 
 export async function fetchLiveSquadProfiles(
   leagueIds: number[] = [LEAGUE_UCL],
-  daysBack = 5
+  daysBack  = 5,
+  fromDate?: string,   // explicit ISO date override
+  toDate?  : string,   // explicit ISO date override
 ): Promise<LivePlayerData[]> {
   const fixtureGroups = await Promise.allSettled(
-    leagueIds.map((id) => fetchRecentFixtures(id, daysBack))
+    leagueIds.map((id) => fetchRecentFixtures(id, daysBack, fromDate, toDate))
   );
 
   // Aggregate by player ID
