@@ -1,0 +1,9 @@
+{
+  "crons": [
+    {
+      "path": "/api/watchdog",
+      "schedule": "0 9 * * *"
+    }
+  ]
+}
+

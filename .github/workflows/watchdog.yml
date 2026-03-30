@@ -1,0 +1,18 @@
+name: Watchdog — 60-minute fatigue scan
+
+on:
+  schedule:
+    # Every 60 minutes (GitHub Actions supports 5-min minimum)
+    - cron: '0 * * * *'
+  workflow_dispatch:  # allow manual trigger from GitHub UI
+
+jobs:
+  run-watchdog:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Ping watchdog endpoint
+        run: |
+          curl -s -f \
+            -H "Authorization: Bearer ${{ secrets.CRON_SECRET }}" \
+            https://sports-fatigue-bot.vercel.app/api/watchdog \
+            | jq '.'
